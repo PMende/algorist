@@ -1,4 +1,12 @@
 '''A set of functions used to transform objects
+
+FUNCTIONS
+---------
+translation: returns a translation matrix
+rotation: returns a rotation matrix
+reflection: returns a reflection matrix
+scale: returns a scaling matrix
+shear: returns a chearing matrix
 '''
 
 from math import (cos, radians, sin)
