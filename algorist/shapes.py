@@ -21,6 +21,13 @@ regular_ngon: UNIMPLEMENTED
 polygon: UNIMPLEMENTED
 '''
 
+__author__ = 'Patrick Mende'
+__version__ = '0.1'
+
+from itertools import chain
+
+import cairocffi as cairo
+
 class Shape(object):
     '''Objects used to draw on surfaces
 
@@ -28,8 +35,20 @@ class Shape(object):
     ----------
     '''
 
+    VALID_KWARGS = {
+        'fill', 'f', 'stroke_color', 's_c', 'outline_color', 'ol_c',
+        'stroke_linewidth', 's_lw', 'outline_width', 'ol_w',
+        'stroke_linestyle', 's_ls', 'stroke_cap', 's_cap', 'conn_style'
+    }
+
     def __init__(self):
         pass
+
+    def __setattr__(self, attr, value):
+        if attr in self.VALID_KWARGS:
+            super().__setattr__(attr, value)
+        else:
+            raise AttributeError('Shape has no attribute {}'.format(attr))
 
 class ShapeGroup(object):
     '''
