@@ -28,16 +28,16 @@ def translation(xy=(0.,0.)):
     Returns
     -------
     translation_matrix - 3x3 numpy array. Translates a vector of the form:
-        v = np.array((1., x, y)).
+        v = np.array((x, y, 1)).
     '''
 
     if np.array(xy).shape != (2,):
         raise DimensionError('xy must be of shape (2,)')
 
     translation_matrix = np.array([
-        [1.,    0., 0.],
-        [xy[0], 1., 0.],
-        [xy[1], 0., 1.]
+        [1., 0., xy[0]],
+        [0., 1., xy[1]],
+        [0., 0., 1.]
     ])
 
     return translation_matrix
@@ -55,7 +55,7 @@ def rotation(angle, axis=None):
     Returns
     -------
     rotation_matrix: 3x3 numpy array. Rotates a vector of the form:
-        v = np.array((1., x, y)). When axis is None, this will simply
+        v = np.array((x, y, 1)). When axis is None, this will simply
         be a regular 2x2 rotation matrix with an extra 1 on the diagonal.
     '''
 
@@ -63,9 +63,9 @@ def rotation(angle, axis=None):
 
     if axis is None:
         rotation_matrix = np.array([
-            [1., 0.,         0.],
-            [0., cos(angle), -sin(angle)],
-            [0., sin(angle), cos(angle)]
+            [cos(angle), -sin(angle), 0.],
+            [sin(angle),  cos(angle), 0.],
+            [0.,          0.,         1.]
         ])
 
     else:
@@ -94,7 +94,7 @@ def reflection(angle, point=None):
     Returns
     -------
     reflection_matrix: 3x3 numpy array. Reflects a vector of the form:
-        v = np.array((1., x, y)). When point is None, this will simply
+        v = np.array((x, y, 1)). When point is None, this will simply
         be a regular 2x2 reflection matrix with an extra 1 on the diagonal.
     '''
 
@@ -102,9 +102,9 @@ def reflection(angle, point=None):
 
     if point is None:
         reflection_matrix = np.array([
-            [1., 0.,           0.],
-            [0., cos(2*angle), sin(2*angle)],
-            [0., sin(2*angle), -cos(2*angle)]
+            [cos(2*angle),  sin(2*angle), 0.],
+            [sin(2*angle), -cos(2*angle), 0.],
+            [0.,           0.,            1.]
         ])
 
     else:
@@ -132,16 +132,16 @@ def scale(scale_x, scale_y=None):
     Returns
     -------
     stretch_matrix: 3x3 numpy array. Stretches a vector of the form:
-        v = np.array((1., x, y)).
+        v = np.array((x, y, 1)).
     '''
 
     if scale_y is None:
         scale_y = scale_x
 
     stretch_matrix = np.array([
-        [1., 0.,      0.],
-        [0., scale_x, 0.],
-        [0., 0.,      scale_y]
+        [scale_x, 0.,      0.],
+        [0.,      scale_y, 0.],
+        [0.,      0.,      1.]
     ])
 
     return stretch_matrix
@@ -156,16 +156,16 @@ def shear(shear_factors=(1., 0.)):
     Returns
     -------
     shear_matrix: 3x3 numpy array. Stretches a vector of the form:
-        v = np.array((1., x, y)).
+        v = np.array((x, y, 1)).
     '''
 
     scale_xy = shear_factors[0]
     scale_yx = shear_factors[1]
 
     shear_matrix = np.array([
-        [1., 0.,       0.],
-        [0., 1.,       scale_xy],
-        [0., scale_yx, 1]
+        [1.,       scale_xy, 0.],
+        [scale_yx, 1.,       0.],
+        [0.,       0.,       1.]
     ])
 
     return shear_matrix
