@@ -25,6 +25,7 @@ __author__ = 'Patrick Mende'
 __version__ = '0.1'
 
 from itertools import chain
+import os
 
 import cairocffi as cairo
 
@@ -41,6 +42,8 @@ class Shape(object):
         'stroke_linestyle', 's_ls', 'stroke_cap', 's_cap', 'conn_style'
     }
 
+    DEFAULTS = {}
+
     def __init__(self):
         pass
 
@@ -49,6 +52,23 @@ class Shape(object):
             super().__setattr__(attr, value)
         else:
             raise AttributeError('Shape has no attribute {}'.format(attr))
+
+    def draw(self, fill=True, stroke=True, outline=False, order='osf'):
+        pass
+
+    def _set_sources(self):
+        pass
+
+    def set_
+
+    def draw_fill(self):
+        pass
+
+    def draw_stroke(self):
+        pass
+
+    def draw_outline(self):
+        pass
 
 class ShapeGroup(object):
     '''
