@@ -24,12 +24,14 @@ polygon: UNIMPLEMENTED
 __author__ = 'Patrick Mende'
 __version__ = '0.1'
 
+from contextlib import contextmanager
 from itertools import chain
 import os
 
 import cairocffi as cairo
+import numpy as np
 
-class Shape(object):
+class Shape():
     '''Objects used to draw on surfaces
 
     Attributes
@@ -37,9 +39,10 @@ class Shape(object):
     '''
 
     VALID_KWARGS = {
-        'fill', 'f', 'stroke_color', 's_c', 'outline_color', 'ol_c',
-        'stroke_linewidth', 's_lw', 'outline_width', 'ol_w',
-        'stroke_linestyle', 's_ls', 'stroke_cap', 's_cap', 'conn_style'
+        'fill', 'f', 'linecolor', 'lc', 'linewidth', 'lw',
+        'outlinecolor', 'olc', 'outlinewidth', 'olw',
+        'linestyle', 'ls', 'linecap', 'lcap', 'conn_style',
+        ''
     }
 
     DEFAULTS = {}
@@ -53,13 +56,20 @@ class Shape(object):
         else:
             raise AttributeError('Shape has no attribute {}'.format(attr))
 
+    def __enter__(self):
+        self.ctx.save()
+
+    def __exit__(self, type, value, traceback):
+        self.ctx.restore()
+
     def draw(self, fill=True, stroke=True, outline=False, order='osf'):
         pass
 
     def _set_sources(self):
         pass
 
-    def set_
+    def set_fill_source(self):
+        pass
 
     def draw_fill(self):
         pass
@@ -74,8 +84,8 @@ class ShapeGroup(object):
     '''
     '''
 
-    def __init__(self):
-        pass
+    def __init__(self, shapes):
+        self.shapes = shapes
 
 def line():
     '''
