@@ -3,6 +3,7 @@
 CLASSES
 -------
 Shape: UNIMPLEMENTED
+ShapeGroup: UNIMPLEMENTED
 
 FUNCTIONS
 ---------
@@ -31,6 +32,8 @@ import os
 import cairocffi as cairo
 import numpy as np
 
+import surfaces
+
 class Shape():
     '''Objects used to draw on surfaces
 
@@ -39,16 +42,30 @@ class Shape():
     '''
 
     VALID_KWARGS = {
-        'fill', 'f', 'linecolor', 'lc', 'linewidth', 'lw',
-        'outlinecolor', 'olc', 'outlinewidth', 'olw',
-        'linestyle', 'ls', 'linecap', 'lcap', 'conn_style',
-        ''
+        'draw_function', 'surface' 'fill', 'linecolor', 'lc', 'linewidth',
+        'lw', 'outlinecolor', 'olc', 'outlinewidth', 'olw', 'linestyle', 'ls',
+        'linecap', 'lcap', 'conn_style'
     }
 
-    DEFAULTS = {}
+    ABBREVIATIONS = {
+        'lc': 'linecolor', 'lw': 'linewidth', 'olc': 'outlinecolor',
+        'olw': 'outlinewidth', 'ls': 'linestyle', 'lcap': 'linecap'
+    }
 
-    def __init__(self):
-        pass
+    DEFAULTS = {
+        'surface': surfaces.ImageSurface()
+    }
+
+    def __init__(self, draw_function, **kwargs):
+        for key, value in kwargs.items():
+            if self.ABBREVIATIONS.get(key) in kwargs:
+                full = self.ABBREVIATIONS[key]
+                raise AttributeError(
+                    'Received both {} and {} as parameters'.format(key, full))
+            # Set key to the full attribute name if it is an abbreviation
+            if key in self.ABBREVIATIONS:
+                key = self.ABBREVIATIONS[key]
+            setattr(self, key, value)
 
     def __setattr__(self, attr, value):
         if attr in self.VALID_KWARGS:
@@ -59,10 +76,10 @@ class Shape():
     def __enter__(self):
         self.ctx.save()
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, value, traceback):
         self.ctx.restore()
 
-    def draw(self, fill=True, stroke=True, outline=False, order='osf'):
+    def draw(self, fill=True, line=True, outline=False, order=['ol', 'l', 'f']):
         pass
 
     def _set_sources(self):
@@ -74,24 +91,28 @@ class Shape():
     def draw_fill(self):
         pass
 
-    def draw_stroke(self):
+    def draw_line(self):
         pass
 
     def draw_outline(self):
         pass
 
-class ShapeGroup(object):
-    '''
-    '''
+    @staticmethod
+    _set_sour
 
+class ShapeGroup():
+    '''
+    '''
     def __init__(self, shapes):
         self.shapes = shapes
 
-def line():
+def line(start, end, **kwargs):
     '''
     '''
-
-    pass
+    def draw_function(ctx):
+        ctx.move_to(*start)
+        ctx.line_to(*end)
+    return Shape(draw_function, **kwargs)
 
 def polyline():
     '''
