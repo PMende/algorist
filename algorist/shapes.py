@@ -140,17 +140,10 @@ def arrow(start, end, *, head_width=1/10, head_length=1/8, overhang=0,
           include_shaft=True, **kwargs):
     '''
     '''
-    vector = np.diff([start, end], axis=0)
-    normed = _unit_vector(vector)
-    perp = _get_2d_perpendicular(normed)
-    try:
-        linewidth = kwargs['linewidth']
-    except KeyError:
-        linewidth = kwargs['lw']
-    # Shift the head backwards along the length of the arrow to account
-    # for the overhang due to non-zero linewidths
-    linewidth_shift = sqrt(1-(2*head_length/head_width)**2)*linewidth/2
-    relative_head_position = vector - (head_length + linewidth_shift)*normed
+    (normed, perp, head_width, head_length, overhang,
+     linewidth_shift, relative_head_position) = _get_arrow_params(
+        start, end, head_width, head_length, overhang, **kwargs
+     )
 
     def draw_function(ctx, inc_s=include_shaft):
         ctx.move_to(*start)
@@ -163,6 +156,31 @@ def arrow(start, end, *, head_width=1/10, head_length=1/8, overhang=0,
         ctx.close_path()
 
     return Shape(draw_function, **kwargs)
+
+def _get_arrow_params(start, end, head_width, head_length, overhang, **kwargs):
+    '''
+    '''
+    vector = np.diff([start, end], axis=0)
+    normed = _unit_vector(vector)
+    length = np.linalg.norm(vector)
+    perp = _get_2d_perpendicular(normed)
+    head_width, head_width, overhang = length*np.array([
+        head_width, head_length, overhang
+    ])
+    try:
+        linewidth = kwargs['linewidth']
+    except KeyError:
+        linewidth = kwargs['lw']
+    # Shift the head backwards along the length of the arrow to account
+    # for the overhang due to non-zero linewidths
+    linewidth_shift = sqrt(1-(2*head_length/head_width)**2)*linewidth/2
+    relative_head_position = vector - (head_length + linewidth_shift)*normed
+
+    return (
+        normed, perp, head_width, head_length, overhang,
+        linewidth_shift, relative_head_position
+    )
+
 
 def _make_arrow_head(ctx, normed, perp, head_w, head_l, overhang):
     '''
