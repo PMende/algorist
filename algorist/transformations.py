@@ -13,7 +13,7 @@ from math import (cos, radians, sin)
 
 import numpy as np
 
-class DimensionError(Exception):
+class DimensionError(ValueError):
     '''Simple exception for
     '''
     pass
@@ -34,9 +34,10 @@ def translation(xy=(0.,0.)):
     if np.array(xy).shape != (2,):
         raise DimensionError('xy must be of shape (2,)')
 
+    dx, dy = xy
     translation_matrix = np.array([
-        [1., 0., xy[0]],
-        [0., 1., xy[1]],
+        [1., 0., dx,
+        [0., 1., dy,
         [0., 0., 1.]
     ])
 
@@ -159,8 +160,7 @@ def shear(shear_factors=(1., 0.)):
         v = np.array((x, y, 1)).
     '''
 
-    scale_xy = shear_factors[0]
-    scale_yx = shear_factors[1]
+    scale_xy, scale_yx = shear_factors
 
     shear_matrix = np.array([
         [1.,       scale_xy, 0.],
@@ -169,3 +169,23 @@ def shear(shear_factors=(1., 0.)):
     ])
 
     return shear_matrix
+
+def compose(matrices):
+    '''Multiplies an arbitrary list of transformation matrices together
+
+    Parameters
+    ----------
+    matrices: List of 3x3 transformation matrices. The 0th element of
+        is the first transformation to be applied, the 1st is the second,
+        etc.
+
+    Returns
+    -------
+    result: 3x3 numpy array. This is the result of sequentially multiplying
+        each matrix in the matrices argument
+    '''
+    first, *remainder = matrices
+    result = np.array(first)
+    for matrix in remainder:
+        np.dot(matrix, result, out=result)
+    return result
