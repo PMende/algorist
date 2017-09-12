@@ -26,6 +26,7 @@ __author__ = 'Patrick Mende'
 __version__ = '0.1'
 
 from contextlib import contextmanager
+from copy import deepcopy
 from itertools import chain
 from math import acos, asin, atan, pi, radians, sqrt
 import os
@@ -34,6 +35,8 @@ import cairocffi as cairo
 import numpy as np
 
 import surfaces
+import transformations
+import patterns
 
 class Shape():
     '''Objects used to draw on surfaces
@@ -42,33 +45,34 @@ class Shape():
     ----------
     '''
 
-    VALID_KWARGS = {
-        'draw_function', 'surface' 'fill', 'linecolor', 'lc', 'linewidth',
-        'lw', 'outlinecolor', 'olc', 'outlinewidth', 'olw', 'linestyle', 'ls',
-        'linecap', 'lcap', 'conn_style'
+    VALID_ATTRS = {
+        'draw_function', 'ctx', 'surface', 'xy', 'angle',
+        'trans_matrix', 'fill', 'linecolor', 'lc', 'linewidth',
+        'lw', 'outlinecolor', 'olc', 'outlinewidth', 'olw',
+        'linestyle', 'ls', 'linecap', 'lcap', 'conn_style'
     }
     ABBREVIATIONS = {
         'lc': 'linecolor', 'lw': 'linewidth', 'olc': 'outlinecolor',
         'olw': 'outlinewidth', 'ls': 'linestyle', 'lcap': 'linecap'
     }
-    DEFAULTS = {
-        'surface': surfaces.ImageSurface(),
-        'fill': (1,1,1),
-        'line_color': (0,0,0)
-    }
+    DEFAULTS = {'fill': (1,1,1), 'line_color': (0,0,0), xy=(0,0), angle=0}
 
-    def __init__(self, draw_function, **kwargs):
+    def __init__(self, draw_function, *, **kwargs):
         self.draw_function = draw_function
-        for key, value in kwargs.items():
-            attr = self._validate_kwarg(key, **kwargs)
+        self._set_kwargs(**kwargs)
+        self._set_defaults(**kwargs)
+        self.ctx = cairo.Context(self.surface)
+
+    def _set_kwargs(self, **kwargs):
+        if 'surface' not in kwargs and 'surface' not in self.DEFAULTS:
+            raise AttributeError('No surface specified')
+        for attr, value in kwargs.items():
+            attr = self._validate_attr(attr, **kwargs)
             setattr(self, attr, value)
 
-    def __setattr__(self, attr, value):
-        super().__setattr__(attr, value)
-
-    def _validate_kwarg(self, attr, **kwargs):
+    def _validate_attr(self, attr, **kwargs):
         # Not a valid keyword argument
-        if attr not in self.VALID_KWARGS:
+        if attr not in self.VALID_ATTRS:
             raise AttributeError('Shape has no attribute {}'.format(attr))
         # Check if both a kwarg and its abbreviation were given
         if self.ABBREVIATIONS.get(attr) in kwargs:
@@ -79,6 +83,25 @@ class Shape():
         if attr in self.ABBREVIATIONS:
             attr = self.ABBREVIATIONS[attr]
         return attr
+
+    def _set_defaults(self, **kwargs):
+        for attr, default_value in self.DEFAULTS.items():
+            if attr in kwargs:
+                continue
+            elif self.ABBREVIATIONS.get(attr) in kwargs:
+                continue
+            setattr(self, attr, default_value)
+        if 'trans_matrix' not in **kwargs:
+            setattr(self, 'trans_matrix', self._default_trans_matrix())
+
+    def _default_trans_matrix(self):
+        R1 = transformations.rotation(self.angle)
+        T1 = transformations.translation(self.xy)
+        return transformations.compose([R1, T1])
+
+    @classmethod
+    def _set_default_surface(cls, surface):
+        cls.DEFAULTS['surface'] = surface
 
     def __enter__(self):
         self.ctx.save()
@@ -134,14 +157,14 @@ def polyline(points, *, close_shape=False **kwargs):
         if close_shape:
             ctx.close_path()
 
-    return Shape(draw_function, **kwargs)
+    return Shape(draw_function, surface=surface, **kwargs)
 
 def arrow(start, end, *, head_width=1/10, head_length=1/8, overhang=0,
-          include_shaft=True, **kwargs):
+          include_shaft=True, surface=None, **kwargs):
     '''
     '''
-    (normed, perp, head_width, head_length, overhang,
-     linewidth_shift, relative_head_position) = _get_arrow_params(
+    (normed, perp, head_width, head_length,
+     overhang, relative_head_position) = _get_arrow_params(
         start, end, head_width, head_length, overhang, **kwargs
      )
 
@@ -151,8 +174,7 @@ def arrow(start, end, *, head_width=1/10, head_length=1/8, overhang=0,
             ctx.rel_line_to(*relative_head_position)
         else:
             ctx.rel_move_to(*relative_head_position)
-        _make_arrow_head(ctx, normed, perp, head_width, head_length,
-                         overhang, linewidth_shift)
+        _make_arrow_head(ctx, normed, perp, head_width, head_length, overhang)
         ctx.close_path()
 
     return Shape(draw_function, **kwargs)
@@ -177,8 +199,7 @@ def _get_arrow_params(start, end, head_width, head_length, overhang, **kwargs):
     relative_head_position = vector - (head_length + linewidth_shift)*normed
 
     return (
-        normed, perp, head_width, head_length, overhang,
-        linewidth_shift, relative_head_position
+        normed, perp, head_width, head_length, overhang, relative_head_position
     )
 
 
@@ -205,7 +226,7 @@ def rect():
     '''
     pass
 
-def arc():
+def arc(r, stop, start=0, *, ):
     '''
     '''
     pass
@@ -244,6 +265,9 @@ def regular_ngon():
 def polygon():
     '''
     '''
+    pass
+
+def set_default_surface(surface):
     pass
 
 def _unit_vector(arr):
