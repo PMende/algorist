@@ -58,7 +58,7 @@ class Shape():
     }
     DEFAULTS = {'fill': (1,1,1), 'line_color': (0,0,0), xy=(0,0), angle=0}
 
-    def __init__(self, draw_function, *, surface=None, **kwargs):
+    def __init__(self, draw_function, **kwargs):
         self.draw_function = draw_function
         self._set_kwargs(**kwargs)
         self._set_defaults(**kwargs)
@@ -106,7 +106,11 @@ class Shape():
         self._restore_initial_attrs()
 
     def _restore_initial_attrs(self):
-        for attr, value in self._saved_attrs()
+        for attr, value in self._saved_attrs():
+            if attr == 'ctx':
+                continue
+            setattr(self, attr, value)
+        del self._saved_attrs
 
     def draw(self, fill=True, line=True, outline=False, order=['ol', 'l', 'f']):
         pass
