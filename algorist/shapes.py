@@ -49,7 +49,8 @@ class Shape():
         'draw_function', 'ctx', 'surface', 'xy', 'angle',
         'trans_matrix', 'fill', 'linecolor', 'lc', 'linewidth',
         'lw', 'outlinecolor', 'olc', 'outlinewidth', 'olw',
-        'linestyle', 'ls', 'linecap', 'lcap', 'conn_style'
+        'linestyle', 'ls', 'linecap', 'lcap', 'conn_style',
+        'zorder', '_saved_attrs'
     }
     ABBREVIATIONS = {
         'lc': 'linecolor', 'lw': 'linewidth', 'olc': 'outlinecolor',
@@ -57,17 +58,14 @@ class Shape():
     }
     DEFAULTS = {'fill': (1,1,1), 'line_color': (0,0,0), xy=(0,0), angle=0}
 
-    def __init__(self, draw_function, *, **kwargs):
+    def __init__(self, draw_function, *, surface=None, **kwargs):
         self.draw_function = draw_function
         self._set_kwargs(**kwargs)
         self._set_defaults(**kwargs)
-        self.ctx = cairo.Context(self.surface)
 
     def _set_kwargs(self, **kwargs):
-        if 'surface' not in kwargs and 'surface' not in self.DEFAULTS:
-            raise AttributeError('No surface specified')
         for attr, value in kwargs.items():
-            attr = self._validate_attr(attr, **kwargs)
+            self._validate_attr(attr, **kwargs)
             setattr(self, attr, value)
 
     def _validate_attr(self, attr, **kwargs):
@@ -77,18 +75,17 @@ class Shape():
         # Check if both a kwarg and its abbreviation were given
         if self.ABBREVIATIONS.get(attr) in kwargs:
             full = self.ABBREVIATIONS[attr]
-            raise AttributeError(
-                'Received both {} and {} as parameters'.format(attr, full))
-        # Set key to the full attribute name if it is an abbreviation
-        if attr in self.ABBREVIATIONS:
-            attr = self.ABBREVIATIONS[attr]
-        return attr
+            message = 'Received both {} and {} as parameters'.format(attr, full)
+            raise AttributeError(message)
+
+    def __setattr__(self, attr, value):
+        # Set attr to the full name if it's an abbreviation - else leave it
+        attr = self.ABBREVIATIONS.get(attr, attr)
+        super().__setattr__(attr, value)
 
     def _set_defaults(self, **kwargs):
         for attr, default_value in self.DEFAULTS.items():
-            if attr in kwargs:
-                continue
-            elif self.ABBREVIATIONS.get(attr) in kwargs:
+            if (attr in kwargs) or (self.ABBREVIATIONS.get(attr) in kwargs):
                 continue
             setattr(self, attr, default_value)
         if 'trans_matrix' not in **kwargs:
@@ -99,15 +96,17 @@ class Shape():
         T1 = transformations.translation(self.xy)
         return transformations.compose([R1, T1])
 
-    @classmethod
-    def _set_default_surface(cls, surface):
-        cls.DEFAULTS['surface'] = surface
-
     def __enter__(self):
         self.ctx.save()
+        self._saved_attrs = deepcopy(self.__dict__)
+        return self
 
     def __exit__(self, exc_type, value, traceback):
         self.ctx.restore()
+        self._restore_initial_attrs()
+
+    def _restore_initial_attrs(self):
+        for attr, value in self._saved_attrs()
 
     def draw(self, fill=True, line=True, outline=False, order=['ol', 'l', 'f']):
         pass
@@ -135,6 +134,10 @@ class ShapeGroup():
     '''
     def __init__(self, shapes):
         self.shapes = shapes
+
+@contextmanager
+def save(drawable):
+
 
 def line(start, end, **kwargs):
     '''
