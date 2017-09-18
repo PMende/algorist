@@ -121,6 +121,27 @@ def reflection(angle, point=None):
 
     return reflection_matrix
 
+def relative_translation(source, target, distance):
+    '''Translation matrix that moves a given target a distance from sources
+
+    Parameters
+    ----------
+    source: 2-tuple of floats (required) - The point to be translated
+        relative to
+    target: 2-tuple of floats (required) - A representative point of the
+        object to be translated (e.g., the center of a circle, or the
+        centroid of a polygon)
+    distance float (required) - How far to move target from source
+
+    Returns
+    -------
+    translation_matrix: 3x3 numpy array. A translation matrix
+    '''
+
+    vector = np.asarray(target) - source
+    unit_vector = _unit_vector(vector)
+    return translation(distance*unit_vector)
+
 def scale(scale_x, scale_y=None):
     '''Scaling matrix that stretches according to scale_x, scale_y
 
@@ -189,3 +210,11 @@ def compose(matrices):
     for matrix in remainder:
         np.dot(matrix, result, out=result)
     return result
+
+
+def _unit_vector(arr):
+    norm = np.linalg.norm(arr)
+    return np.asarray(arr)/norm
+
+def _get_2d_perpendicular(arr):
+    return np.array([arr[1], -arr[0]])
