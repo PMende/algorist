@@ -29,6 +29,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from itertools import chain
 from math import acos, asin, atan, pi, radians, sqrt
+from operator import attrgetter
 import os
 
 import cairocffi as cairo
@@ -46,7 +47,7 @@ class Shape():
     '''
 
     VALID_ATTRS = {
-        'draw_function', 'ctx', 'surface', 'xy', 'angle',
+        'draw_function', 'ctx', 'xy', 'angle',
         'trans_matrix', 'fill', 'linecolor', 'lc', 'linewidth',
         'lw', 'outlinecolor', 'olc', 'outlinewidth', 'olw',
         'linestyle', 'ls', 'linecap', 'lcap', 'conn_style',
@@ -56,7 +57,9 @@ class Shape():
         'lc': 'linecolor', 'lw': 'linewidth', 'olc': 'outlinecolor',
         'olw': 'outlinewidth', 'ls': 'linestyle', 'lcap': 'linecap'
     }
-    DEFAULTS = {'fill': (1,1,1), 'line_color': (0,0,0), xy=(0,0), angle=0}
+    DEFAULTS = {'fill': (1,1,1), 'line_color': (0,0,0), xy=(0,0), angle=0,
+                'zorder': 0
+    }
 
     def __init__(self, draw_function, **kwargs):
         self.draw_function = draw_function
@@ -112,16 +115,32 @@ class Shape():
             setattr(self, attr, value)
         del self._saved_attrs
 
-    def draw(self, fill=True, line=True, outline=False, order=['ol', 'l', 'f']):
+    def draw(self, fill=True, line=True, outline=False,
+             order=['ol', 'l', 'f'], *, target):
+        '''Draws the Shape to the target's surface
+
+        Parameters
+        ----------
+        fill: bool (optional - default: True) - Whether to draw the fill of
+            the shape object
+        line: bool (optional - default: True) - Whether to draw the stroke
+            (or line) of the shape object
+        outline: bool (optional - default: False) - Whether to draw the
+            outline of the shape object
+
+        Returns
+        -------
+        None
+        '''
         pass
 
-    def draw_fill(self):
+    def _draw_fill(self):
         pass
 
-    def draw_line(self):
+    def _draw_line(self):
         pass
 
-    def draw_outline(self):
+    def _draw_outline(self):
         pass
 
     def _set_sources(self):
@@ -136,12 +155,37 @@ class Shape():
 class ShapeGroup():
     '''
     '''
-    def __init__(self, shapes):
-        self.shapes = shapes
+    def __init__(self, shapes=None, sort_by_z=False):
+        self._set_shapes(shapes, sort_by_z)
+
+    def __iter__(self):
+        return self.shapes.__iter__()
+
+    def __enter__(self):
+        for shape in self:
+            shape.__enter__()
+
+    def __exit__(self):
+        for shape in self:
+            shape.__exit__()
+
+    def _set_shapes(self, shapes, sort):
+        if shapes is None:
+            self.shapes = []
+            return
+        if sort:
+            _shapes = sorted(shapes, key=attrgetter('zorder'), reverse=True)
+        else:
+            _shapes = shapes
+        self.shapes = _shapes
+
+    def draw(self, *, target):
+        for shape in self.shapes:
+            shape.draw(target=target)
 
 @contextmanager
 def save(drawable):
-
+    pass
 
 def line(start, end, **kwargs):
     '''
@@ -164,10 +208,10 @@ def polyline(points, *, close_shape=False **kwargs):
         if close_shape:
             ctx.close_path()
 
-    return Shape(draw_function, surface=surface, **kwargs)
+    return Shape(draw_function, **kwargs)
 
 def arrow(start, end, *, head_width=1/10, head_length=1/8, overhang=0,
-          include_shaft=True, surface=None, **kwargs):
+          include_shaft=True, **kwargs):
     '''
     '''
     (normed, perp, head_width, head_length,
@@ -272,9 +316,6 @@ def regular_ngon():
 def polygon():
     '''
     '''
-    pass
-
-def set_default_surface(surface):
     pass
 
 def _unit_vector(arr):
