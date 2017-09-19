@@ -8,15 +8,20 @@ PSSurface: UNIMPLEMENTED
 SVGSurface: UNIMPLEMENTED
 '''
 
+import cairocffi as cairo
+import numpy as np
+
+import shapes
+
 
 class Surface():
     '''Base canvas-like object to be drawn on
     '''
-    def __init__(self, *, name=None, shapes=None):
-        if shapes is None:
-            self.shapes = []
-        else:
-            self.shapes = shapes
+    def __init__(self, *, name=None):
+        self.name = name
+
+    def __iter__(self):
+        return self.shapes.__iter__()
 
     def render(self):
         pass
@@ -24,8 +29,11 @@ class Surface():
     def write(self):
         pass
 
-    def add(shape):
-        self.
+    def add(self, shape):
+        pass
+
+    def _bind(self, shape):
+        pass
 
 class ImageSurface(Surface):
     '''
