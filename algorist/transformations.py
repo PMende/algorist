@@ -6,7 +6,9 @@ translation: returns a translation matrix
 rotation: returns a rotation matrix
 reflection: returns a reflection matrix
 scale: returns a scaling matrix
-shear: returns a chearing matrix
+shear: returns a shearing matrix
+compose: composes the given iterable of matrices
+create_cairo_matrix: creates a cairocffi.Matrix from the given matrix
 '''
 
 from functools import reduce
