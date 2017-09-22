@@ -9,8 +9,10 @@ scale: returns a scaling matrix
 shear: returns a chearing matrix
 '''
 
+from functools import reduce
 from math import (cos, radians, sin)
 
+import cairocffi as cairo
 import numpy as np
 
 class DimensionError(ValueError):
@@ -31,7 +33,7 @@ def translation(xy=(0.,0.)):
         v = np.array((x, y, 1)).
     '''
 
-    if np.array(xy).shape != (2,):
+    if np.asarray(xy).shape != (2,):
         raise DimensionError('xy must be of shape (2,)')
 
     dx, dy = xy
@@ -109,7 +111,7 @@ def reflection(angle, point=None):
         ])
 
     else:
-        point = np.array(point)
+        point = np.asarray(point)
         if point.shape != (2,):
             raise DimensionError('axis must be of shape (2,)')
 
@@ -205,12 +207,25 @@ def compose(matrices):
     result: 3x3 numpy array. This is the result of sequentially multiplying
         each matrix in the matrices argument
     '''
-    first, *remainder = matrices
-    result = np.array(first)
-    for matrix in remainder:
-        np.dot(matrix, result, out=result)
+    # Reverse the order of the matrices so that the last element is
+    # multiplied on the second to last is multiplied on the third to
+    # last, etc.
+    result = reduce(np.dot, matrices[::-1])
     return result
 
+def create_cairo_matrix(matrix):
+    '''Creates a cairo Matrix object from the supplied matrix
+
+    Parameters
+    ----------
+    matrix: Affine transformation matrix (3x3 NumPy array)
+
+    Returns
+    -------
+    cairo_matrix: Cario.Matrix instance
+    '''
+    columns_first_2_rows = zip(*matrix[:2,:])
+    return cairo.Matrix(*chain(*columns_first_2_rows))
 
 def _unit_vector(arr):
     norm = np.linalg.norm(arr)
