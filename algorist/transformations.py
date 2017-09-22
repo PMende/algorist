@@ -226,8 +226,25 @@ def create_cairo_matrix(matrix):
     -------
     cairo_matrix: Cario.Matrix instance
     '''
-    columns_first_2_rows = zip(*matrix[:2,:])
-    return cairo.Matrix(*chain(*columns_first_2_rows))
+    first_2_rows = matrix[:2,:]
+    return cairo.Matrix(*first_2_rows.T.flatten())
+
+def cairo_to_numpy(matrix):
+    '''Creates a numpy array affine transformation matrix from a cairo Matrix
+
+    Parameters
+    ----------
+    matrix: cairo Matrix instance
+
+    Returns
+    -------
+    numpy_matrix: 3x3 NumPy array representing the affine transformation of
+        the cairo Matrix input
+    '''
+
+    matrix_tuple = matrix.as_tuple()
+    rows = np.array(matrix_tuple).reshape(3,2).T
+    return np.vstack((rows, [0, 0, 1]))
 
 def _unit_vector(arr):
     norm = np.linalg.norm(arr)
