@@ -155,21 +155,35 @@ class Shape():
         self.ctx = cairo.Context(target=self.surface.cairo_surface)
 
     def _draw_fill(self):
-        pass
+        self._set_fill_params()
 
     def _draw_line(self):
-        pass
+        self._set_line_params()
 
     def _draw_outline(self):
         pass
 
+    def _set_fill_params(self):
+        self._set_fill_source()
+
     def _set_fill_source(self):
-        try:
-            self.ctx.set_source_rgba(*self.fill)
-        except TypeError:
-            pass
-        try:
-            self.ctx.set_source_surface()
+        methods = (
+            self.ctx.set_source_rgba, self.ctx.set_source_surface,
+            self.ctx.set_source
+        )
+        sources = (self.fill, self.fill.cairo_surface, self.fill)
+        message = 'Fill must be one of: RGB(A) iterable, Surface, or Pattern'
+        for i, (method, source) in enumerate(zip(methods,sources)):
+            try:
+                method(source)
+            except TypeError:
+                if i == 2: # Raise execption on last method call
+                    raise TypeError(message)
+            except AttributeError:
+                if i == 2: # Raise execption on last method call
+                    raise TypeError(message)
+            else:
+                break
 
     def _set_line_params(self):
         self._set_line_source()
