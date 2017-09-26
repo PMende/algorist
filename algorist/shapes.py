@@ -47,9 +47,9 @@ class Shape():
     '''
 
     VALID_ATTRS = {
-        'draw_function', 'ctx', 'xy', 'angle',
-        'trans_matrix', 'fill', 'linecolor', 'lc', 'linewidth',
-        'lw', 'outlinecolor', 'olc', 'outlinewidth', 'olw',
+        'draw_function', 'ctx', 'xy', 'angle', 'matrix',
+        'fill', 'linecolor', 'lc', 'linewidth', 'lw',
+        'outlinecolor', 'olc', 'outlinewidth', 'olw',
         'linestyle', 'ls', 'linecap', 'lcap', 'conn_style',
         'zorder', '_saved_attrs'
     }
@@ -67,11 +67,15 @@ class Shape():
         self._set_defaults(**kwargs)
 
     def _set_kwargs(self, **kwargs):
+        '''Sets the variable keyword arguments to object attributes
+        '''
         for attr, value in kwargs.items():
             self._validate_attr(attr, **kwargs)
             setattr(self, attr, value)
 
     def _validate_attr(self, attr, **kwargs):
+        '''Ensures that the given attribute is appropriate for the shape
+        '''
         # Not a valid keyword argument
         if attr not in self.VALID_ATTRS:
             raise AttributeError('Shape has no attribute {}'.format(attr))
@@ -87,17 +91,21 @@ class Shape():
         super().__setattr__(attr, value)
 
     def _set_defaults(self, **kwargs):
+        '''Sets default values for attributes in DEFAULTS
+        '''
         for attr, default_value in self.DEFAULTS.items():
             if (attr in kwargs) or (self.ABBREVIATIONS.get(attr) in kwargs):
                 continue
             setattr(self, attr, default_value)
-        if 'trans_matrix' not in **kwargs:
-            setattr(self, 'trans_matrix', self._default_trans_matrix())
+        if 'matrix' not in **kwargs:
+            setattr(self, 'matrix', self._default_matrix())
 
-    def _default_trans_matrix(self):
+    def _default_matrix(self):
+        '''Sets a default transformation matrix for the shape
+        '''
         R1 = transformations.rotation(self.angle)
         T1 = transformations.translation(self.xy)
-        return transformations.compose([R1, T1])
+        return transformations.compose(R1, T1)
 
     def __enter__(self):
         self.ctx.save()
@@ -109,11 +117,23 @@ class Shape():
         self._restore_initial_attrs()
 
     def _restore_initial_attrs(self):
+        '''Convenience method for __exit__
+        '''
         for attr, value in self._saved_attrs():
             if attr == 'ctx':
                 continue
             setattr(self, attr, value)
         del self._saved_attrs
+
+    def transform(self, transformation):
+        '''Transforms the shape with the given transformation matrix
+
+        Parameters
+        ----------
+        transformation: 3x3 numpy array of floats - A NumPy array representing
+            an affine transformation
+        '''
+        pass
 
     def draw(self, fill=True, line=True, outline=False,
              order=['ol', 'l', 'f'], *, target):
@@ -132,7 +152,7 @@ class Shape():
         -------
         None
         '''
-        pass
+        self.ctx = cairo.Context(target=self.surface.cairo_surface)
 
     def _draw_fill(self):
         pass
@@ -143,13 +163,36 @@ class Shape():
     def _draw_outline(self):
         pass
 
-    def _set_sources(self):
-        pass
-
     def _set_fill_source(self):
-        pass
+        try:
+            self.ctx.set_source_rgba(*self.fill)
+        except TypeError:
+            pass
+        try:
+            self.ctx.set_source_surface()
+
+    def _set_line_params(self):
+        self._set_line_source()
+        self._set_line_linestyle()
+        self._set_line_capstyle()
 
     def _set_line_source(self):
+        self.ctx.set_source_rgba(*self.linecolor)
+
+    def _set_line_linestyle(self):
+        pass
+
+    def _set_line_capstyle(self):
+        pass
+
+    def _set_outline_params(self):
+        self._set_outline_source()
+        self._set_outline_style()
+
+    def _set_outline_source(self):
+        self.ctx.set_source_rgba(*self.outlinecolor)
+
+    def _set_outline_linestyle():
         pass
 
 class ShapeGroup():
@@ -182,10 +225,6 @@ class ShapeGroup():
     def draw(self, *, target):
         for shape in self.shapes:
             shape.draw(target=target)
-
-@contextmanager
-def save(drawable):
-    pass
 
 def line(start, end, **kwargs):
     '''
