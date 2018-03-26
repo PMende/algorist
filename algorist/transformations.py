@@ -195,7 +195,7 @@ def shear(shear_factors=(1., 0.)):
 
     return shear_matrix
 
-def compose(matrices):
+def compose(*matrices):
     '''Multiplies an arbitrary list of transformation matrices together
 
     Parameters
